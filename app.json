@@ -1,27 +1,48 @@
 {
   "expo": {
-    "name": "RR-FINANCE",
-    "slug": "RR-FINANCE",
+    "name": "rr-finance",
+    "slug": "rr-finance",
     "version": "1.0.0",
+    "scheme": "rrbank",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icon-rrbank.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/splash-rrbank.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rafaelcrb.rr-finace"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.rafaelcrb.projeto"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon-rrbank.png"
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d51124dd-c85b-4555-b90b-c37e6e701695"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d51124dd-c85b-4555-b90b-c37e6e701695"
+    },
+    "owner": "rafaelcrb"
   }
 }
