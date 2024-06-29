@@ -2,14 +2,23 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-const ExpenseScreen = () => {
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+const ExpenseScreen: React.FC = () => {
+  const [valor, setValor] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const router = useRouter();
 
-  const handleAddExpense = () => {
-    console.log('Expense added:', { amount, description });
+  const handleAddExpense = async () => {
+    const despesa = { valor, description, date: new Date() };
+    try {
+      const docRef = await addDoc(collection(db, 'despesas'), despesa);
+      console.log('Documento escrito com ID: ', docRef.id);
+    } catch (e) {
+      console.error('Erro ao adicionar documento: ', e);
+    }
+    console.log('Despesa adicionada:', { valor, description });
     router.back();
   };
 
@@ -28,8 +37,8 @@ const ExpenseScreen = () => {
         placeholder="Valor"
         placeholderTextColor="#ccc"
         keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
+        value={valor}
+        onChangeText={setValor}
       />
       <TouchableOpacity style={styles.button} onPress={handleAddExpense}>
         <Text style={styles.buttonText}>Adicionar</Text>

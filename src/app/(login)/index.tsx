@@ -1,38 +1,41 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Alert, Button, } from 'react-native';
-import logo from './../../../assets/imgs/Logo_RRBank.png'
-import Icon from 'react-native-vector-icons/AntDesign'
+import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Alert } from 'react-native';
+import logo from './../../../assets/imgs/Logo_RRBank.png';
 import { router } from 'expo-router';
 import { Formik } from "formik";
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Icon from 'react-native-vector-icons/Feather';
 
-
-
-export interface TelaLoginProps {
-}
+export interface TelaLoginProps { }
 
 export default function TelaLogin(props: TelaLoginProps) {
+    const handlePasswordReset = (email: string) => {
+        sendPasswordResetEmail(auth, email)
+            .then(() => {
+                Alert.alert('Email Enviado!', 'Verifique seu email para redefinir sua senha.');
+            })
+            .catch((error) => {
+                Alert.alert('Erro', 'Não foi possível enviar o email de redefinição de senha.');
+            });
+    };
 
-    //VARIAVEIS
-
-    const alterarSenha = () =>
+    const alterarSenha = (email: string) =>
         Alert.alert('Confirmação!', 'Deseja Alterar Sua Senha?', [
             {
                 text: 'SIM',
-                onPress: () => console.log('Alterar Senha: SIM'),
+                onPress: () => handlePasswordReset(email),
                 style: 'cancel',
             },
             { text: 'NÃO', onPress: () => console.log('Alterar Senha: NÃO') },
         ]);
 
     const handleLogin = async ({ email, senha }: any) => {
-
         await signInWithEmailAndPassword(auth, email, senha)
             .then(usuario => router.replace('/inicio'))
             .catch(erro => Alert.alert('Erro', 'Login ou senha incorreta!'));
     }
-
 
     const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
     const togglePasswordVisibility = () => {
@@ -40,66 +43,53 @@ export default function TelaLogin(props: TelaLoginProps) {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity>
-                    <View style={styles.menuIcon}>
-                        <View style={styles.bar}></View>
-                        <View style={styles.bar}></View>
-                        <View style={styles.bar}></View>
-                    </View>
-                </TouchableOpacity>
-                <Text style={styles.slogan}>Gerencie suas finanças com facilidade e confiança com o RR-Finance.</Text>
-            </View>
-            <View style={styles.loginBox}>
-                <Image source={logo} style={styles.logo} />
-                <Text style={styles.title}>Conecte-se</Text>
-                <Text style={styles.subtitle}>Faça login para continuar</Text>
-                <Formik
-                    initialValues={{ email: '', senha: '' }}
-                    onSubmit={handleLogin}
-                >
-                    {({ handleChange, handleSubmit, isSubmitting }) => (
-                        <View>
-                            <Text style={{ marginBottom: 5, fontWeight: 'bold', color:"#fff"}}>Login:</Text>
-                            
-                            <TextInput onChangeText={handleChange('email')} style={[styles.input]} placeholder="E-mail:" />
-                            
-                            <View style={styles.passwordContainer}>
-                                <TextInput onChangeText={handleChange('senha')} style={styles.input} secureTextEntry={!isPasswordVisible} placeholder="Senha:" />
-                                <TouchableOpacity onPress={togglePasswordVisibility} style={styles.toggleButton}>
-                                    <Text style={styles.togglePassword}>
-                                        {isPasswordVisible ? '🙈' : '👁️'}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                            
-                            <TouchableOpacity style={styles.button} onPress={handleSubmit as any}>
-                                <Text style={styles.buttonText}>Entrar</Text>
-                            </TouchableOpacity>
+        <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity>
+                        <View style={styles.menuIcon}>
+                            <View style={styles.bar}></View>
+                            <View style={styles.bar}></View>
+                            <View style={styles.bar}></View>
                         </View>
-                    )}
-                </Formik>
-
-                <View style={styles.links}>
-                    <TouchableOpacity onPress={alterarSenha}>
-                        <Text style={styles.linkText}>Esqueceu a senha?</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => router.push('/cadastro')}>
-                        <Text style={styles.linkText}>Cadastre-se!</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.slogan}>Gerencie suas finanças com facilidade e confiança com o RR-Finance.</Text>
+                </View>
+                <View style={styles.loginBox}>
+                    <Image source={logo} style={styles.logo} />
+                    <Text style={styles.title}>Conecte-se</Text>
+                    <Text style={styles.subtitle}>Faça login para continuar</Text>
+                    <Formik
+                        initialValues={{ email: '', senha: '' }}
+                        onSubmit={handleLogin}
+                    >
+                        {({ handleChange, handleSubmit, values }) => (
+                            <View>
+                                <Text style={{ marginBottom: 5, fontWeight: 'bold', color: "#fff" }}>Login:</Text>
+                                <TextInput onChangeText={handleChange('email')} style={[styles.input]} placeholder="E-mail:" placeholderTextColor="#ccc" />
+                                <View style={styles.passwordContainer}>
+                                    <TextInput onChangeText={handleChange('senha')} style={styles.input} secureTextEntry={!isPasswordVisible} placeholder="Senha:" placeholderTextColor="#ccc" />
+                                    <TouchableOpacity onPress={togglePasswordVisibility} style={styles.toggleButton}>
+                                        <Icon name={isPasswordVisible ? "eye-off" : "eye"} size={20} color="#ccc" />
+                                    </TouchableOpacity>
+                                </View>
+                                <TouchableOpacity style={styles.button} onPress={handleSubmit as any}>
+                                    <Text style={styles.buttonText}>Entrar</Text>
+                                </TouchableOpacity>
+                                <View style={styles.links}>
+                                    <TouchableOpacity onPress={() => alterarSenha(values.email)}>
+                                        <Text style={styles.linkText}>Esqueceu a senha?</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => router.push('/cadastro')}>
+                                        <Text style={styles.linkText}>Cadastre-se!</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+                    </Formik>
                 </View>
             </View>
-        </View>
-
-
-
-
-
-
-
-
-
+        </KeyboardAwareScrollView>
     );
 }
 
@@ -114,6 +104,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        borderBottomLeftRadius: 20,
+        borderBottomRightRadius: 20
     },
     menuIcon: {
         flexDirection: 'column',
@@ -202,5 +194,4 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         shadowOpacity: 0.2
     },
-
 });

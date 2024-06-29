@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image, Alert,} from 'react-native';
-import logo from './../../../assets/imgs/Logo_RRBank.png'
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image, Alert } from 'react-native';
+import logo from './../../../assets/imgs/Logo_RRBank.png';
 import { router } from 'expo-router';
 import { Formik } from "formik";
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/firebase'; 
 import { doc, getFirestore, setDoc } from 'firebase/firestore';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import Icon from 'react-native-vector-icons/Feather';
 
 // Função para manipular registro com Firebase
 const handleCadastro = async ({ email, senha, nome, contato }: any) => {
@@ -15,7 +17,7 @@ const handleCadastro = async ({ email, senha, nome, contato }: any) => {
       // Adicionar informações adicionais do usuário no Firestore
       const userRef = doc(getFirestore(), 'usuarios', user.uid);
       await setDoc(userRef, { nome, email, contato });
-      router.back()
+      router.back();
     })
     .catch(error => Alert.alert('Erro', 'Não foi possível criar a conta!'));
 }
@@ -28,81 +30,81 @@ const RegisterScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <View style={styles.menuIcon}>
-            <View style={styles.bar}></View>
-            <View style={styles.bar}></View>
-            <View style={styles.bar}></View>
-          </View>
-        </TouchableOpacity>
-        
-        <Text style={styles.slogan}>Gerencie suas finanças com facilidade e confiança com o RR-Finance.</Text>
-      </View>
-      <View style={styles.registerBox}>
-        <Image source={logo} style={styles.logo} />
-        <Text style={styles.title}>Criar nova conta</Text>
-        <Text style={styles.subtitle}>Já tem registro?</Text>
-        <Text onPress={() => router.push('/(login)')} style={styles.loginLink}>Faça login.</Text>
-        <Formik
-          initialValues={{ nome: '', email: '', contato: '', senha: '' }}
-          onSubmit={handleCadastro}
-        >
-          {({ handleChange, handleBlur, handleSubmit, values }) => (
-            <View>
-              <TextInput
-                style={styles.input}
-                onChangeText={handleChange('nome')}
-                onBlur={handleBlur('nome')}
-                value={values.nome}
-                placeholder="Nome:"
-                placeholderTextColor="#ccc"
-              />
-              <TextInput
-                style={styles.input}
-                onChangeText={handleChange('email')}
-                onBlur={handleBlur('email')}
-                value={values.email}
-                placeholder="E-mail:"
-                placeholderTextColor="#ccc"
-              />
-              <TextInput
-                style={styles.input}
-                onChangeText={handleChange('contato')}
-                onBlur={handleBlur('contato')}
-                value={values.contato}
-                placeholder="Contato:"
-                placeholderTextColor="#ccc"
-              />
-              <View style={styles.passwordContainer}>
+    <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity>
+            <View style={styles.menuIcon}>
+              <View style={styles.bar}></View>
+              <View style={styles.bar}></View>
+              <View style={styles.bar}></View>
+            </View>
+          </TouchableOpacity>
+          
+          <Text style={styles.slogan}>Gerencie suas finanças com facilidade e confiança com o RR-Finance.</Text>
+        </View>
+        <View style={styles.registerBox}>
+          <Image source={logo} style={styles.logo} />
+          <Text style={styles.title}>Criar nova conta</Text>
+          <Text style={styles.subtitle}>Já tem registro?</Text>
+          <Text onPress={() => router.push('/(login)')} style={styles.loginLink}>Faça login.</Text>
+          <Formik
+            initialValues={{ nome: '', email: '', contato: '', senha: '' }}
+            onSubmit={handleCadastro}
+          >
+            {({ handleChange, handleBlur, handleSubmit, values }) => (
+              <View>
                 <TextInput
                   style={styles.input}
-                  onChangeText={handleChange('senha')}
-                  onBlur={handleBlur('senha')}
-                  value={values.senha}
-                  placeholder="Senha:"
+                  onChangeText={handleChange('nome')}
+                  onBlur={handleBlur('nome')}
+                  value={values.nome}
+                  placeholder="Nome:"
                   placeholderTextColor="#ccc"
-                  secureTextEntry={!isPasswordVisible}
                 />
-                <TouchableOpacity onPress={togglePasswordVisibility} style={styles.toggleButton}>
-                  <Text style={styles.togglePassword}>
-                    {isPasswordVisible ? '🙈' : '👁️'}
-                  </Text>
+                <TextInput
+                  style={styles.input}
+                  onChangeText={handleChange('email')}
+                  onBlur={handleBlur('email')}
+                  value={values.email}
+                  placeholder="E-mail:"
+                  placeholderTextColor="#ccc"
+                />
+                <TextInput
+                  style={styles.input}
+                  onChangeText={handleChange('contato')}
+                  onBlur={handleBlur('contato')}
+                  value={values.contato}
+                  placeholder="Contato:"
+                  placeholderTextColor="#ccc"
+                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={styles.input}
+                    onChangeText={handleChange('senha')}
+                    onBlur={handleBlur('senha')}
+                    value={values.senha}
+                    placeholder="Senha:"
+                    placeholderTextColor="#ccc"
+                    secureTextEntry={!isPasswordVisible}
+                  />
+                  <TouchableOpacity onPress={togglePasswordVisibility} style={styles.toggleButton}>
+                  <Icon name={isPasswordVisible ? "eye-off" : "eye"} size={20} color="#ccc" />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.buttonRegistrar} onPress={handleSubmit as any}>
+                  <Text style={styles.buttonText}>Registrar</Text>
+                </TouchableOpacity>
+              
+                <TouchableOpacity style={styles.buttonVoltar} onPress={router.back}>
+                  <Text style={styles.buttonText}>Voltar</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.buttonRegistrar} onPress={handleSubmit as any}>
-                <Text style={styles.buttonText}>Registrar</Text>
-              </TouchableOpacity>
-            
-              <TouchableOpacity style={styles.buttonVoltar} onPress={router.back}>
-                <Text style={styles.buttonText}>Voltar</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </Formik>
-      </View>
-    </SafeAreaView>
+            )}
+          </Formik>
+        </View>
+      </SafeAreaView>
+    </KeyboardAwareScrollView>
   );
 };
 

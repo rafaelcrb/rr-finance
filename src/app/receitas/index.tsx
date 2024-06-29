@@ -2,14 +2,23 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../config/firebase'
 
-const RevenueScreen = () => {
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
+const RevenueScreen: React.FC = () => {
+  const [valor, setValor] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
   const router = useRouter();
 
-  const handleAddRevenue = () => {
-    console.log('Revenue added:', { amount, description });
+  const handleAddRevenue = async () => {
+    const receita = { valor, description, date: new Date() };
+    try {
+      const docRef = await addDoc(collection(db, 'receitas'), receita);
+      console.log('Documento escrito com ID: ', docRef.id);
+    } catch (e) {
+      console.error('Erro ao adicionar documento: ', e);
+    }
+    console.log('Receita adicionada:', { valor, description });
     router.back();
   };
 
@@ -28,8 +37,8 @@ const RevenueScreen = () => {
         placeholder="Valor"
         placeholderTextColor="#ccc"
         keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
+        value={valor}
+        onChangeText={setValor}
       />
       <TouchableOpacity style={styles.button} onPress={handleAddRevenue}>
         <Text style={styles.buttonText}>Adicionar</Text>
