@@ -1,236 +1,278 @@
-import * as React from 'react';
-import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity, Alert, Button, } from 'react-native';
-import logo from './../../../assets/imgs/Logo_RRBank.png'
-import imginicio from './../../../assets/imgs/Inicio.png'
-import imgextrato from './../../../assets/imgs/Extrato.png'
-import imgpix from './../../../assets/imgs/Pix_menu.png'
-import imgmenu from './../../../assets/imgs/Menu.png'
-import Sair from 'react-native-vector-icons/SimpleLineIcons'
-import Cartao from 'react-native-vector-icons/Entypo'
-import Config from 'react-native-vector-icons/Feather'
-import imgseguranca from './../../../assets/imgs/seguranca.png'
-import Ajuda from 'react-native-vector-icons/Ionicons'
-import imgsair from './../../../assets/imgs/sair.png'
-import Saldo from 'react-native-vector-icons/EvilIcons'
-import Minhaconta from 'react-native-vector-icons/MaterialCommunityIcons'
-import Icon from 'react-native-vector-icons/AntDesign'
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, TextInput, Button } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Modal from 'react-native-modal';
 import { router } from 'expo-router';
+import { db } from '../config/firebase';
 import { auth } from '../config/firebase';
 
-export interface TelaMenuProps {
-}
+const ConfiguracoesScreen: React.FC = () => {
+  const [isProfileEditModalVisible, setProfileEditModalVisible] = useState(false);
+  const [isSalaryInsertModalVisible, setSalaryInsertModalVisible] = useState(false);
+  const [isChangePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
 
-export default function TelaMenu(props: TelaMenuProps) {
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        setUserEmail(user.email || '');
+        const userDoc = await db.collection('usuarios').doc(user.uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          setUserName(userData?.name || ''); // Supondo que o campo no Firestore seja 'name'
+        }
+      }
+    };
 
-    const [exibir, setExibir] = React.useState(false);
-    const [instituicao, setInstituicao] = React.useState('(RR-Bank)');
-    const [agencia, setAgencia] = React.useState('(777)');
-    const [conta, setConta] = React.useState('(12345-6)');
+    fetchUserData();
+  }, []);
 
-    const menu = () => {
-        router.replace('/menu')
-    }
+  const toggleProfileEditModal = () => {
+    setProfileEditModalVisible(!isProfileEditModalVisible);
+  };
 
-    const inicio = () => {
-        router.replace('/inicio')
-    }
+  const toggleSalaryInsertModal = () => {
+    setSalaryInsertModalVisible(!isSalaryInsertModalVisible);
+  };
 
-    const extrato = () => {
-        router.replace('/extrato')
-    }
+  const toggleChangePasswordModal = () => {
+    setChangePasswordModalVisible(!isChangePasswordModalVisible);
+  };
 
-    const pix = () => {
-        router.replace('/pix')
-    }
-
-
-    return (
-        <View style={styles.container} >
-
-            <View style={styles.header}>
-                <Image style={styles.logo} source={logo} />
-                <Text style={styles.textHeader}>Menu</Text>
-            </View>
-
-            <View style={{ padding: 10, justifyContent: 'space-around', flexDirection: 'column', width: 330, height: 72, backgroundColor: '#BDF8E2', borderRadius: 15 }}>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', }}>Instituição: {exibir ? instituicao : '(**********)'} </Text>
-                <Text style={{ fontSize: 16, fontWeight: 'bold', }}>Agência: {exibir ? agencia : '(****)'}  Conta: {exibir ? conta : '(********)'}  </Text>
-
-                <TouchableOpacity onPress={() => setExibir(!exibir)}>
-                    <Saldo style={styles.iconSaldo} name="eye" size={40} color='#000' />
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.containersenha}>
-                <TouchableOpacity>
-                    <View>
-                        <Text>__________________________________________</Text>
-                        <Icon style={styles.imgMenu} name="user" size={28}></Icon>
-                        <Text style={styles.textMenu}>Meus Dados </Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <View>
-                        <Text>__________________________________________</Text>
-                        <Minhaconta style={styles.imgMenu} name="finance" size={28} ></Minhaconta>
-                        <Text style={styles.textMenu}>Minha Conta </Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <View>
-                        <Text>__________________________________________</Text>
-                        <Cartao style={styles.imgMenu} name="credit-card" size={28}></Cartao>
-                        <Text style={styles.textMenu}>Meu Cartão </Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <View>
-                        <Text>__________________________________________</Text>
-                        <Config style={styles.imgMenu} name="settings" size={28}></Config>
-                        <Text style={styles.textMenu}>Configurações do Aplicativo </Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <View>
-                        <Text>__________________________________________</Text>
-                        <Image style={styles.imgMenu} source={imgseguranca}></Image>
-                        <Text style={styles.textMenu}>Segurança</Text>
-                    </View>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <View>
-                        <Text>__________________________________________</Text>
-                        <Ajuda style={styles.imgMenu} name="help-circle-outline" size={30}></Ajuda>
-                        <Text style={styles.textMenu}>Ajuda </Text>
-                    </View>
-                </TouchableOpacity>
-                
-                <TouchableOpacity onPress={() => {
-                    auth.signOut();
-                    router.replace('/')
-                    
-                }}>
-                <View>
-                    <Text>__________________________________________</Text>
-                    <Sair style={styles.imgMenu} name="logout" size={25}></Sair>
-                    <Text style={styles.textMenu}>Sair </Text>
-                </View>
-                </TouchableOpacity>
-
-
-            </View>
-
-
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', }}>
-                <TouchableOpacity onPress={inicio}>
-                    <Image style={styles.imgRodape} source={imginicio}></Image>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={extrato}>
-                    <Image style={styles.imgRodape} source={imgextrato}></Image>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={pix}>
-                    <Image style={styles.imgRodape} source={imgpix}></Image>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={menu} >
-                    <Image style={styles.imgRodape} source={imgmenu}></Image>
-                </TouchableOpacity>
-            </View>
-
-        </View>
+  const handleLogout = () => {
+    Alert.alert(
+      'Confirmação de Logout',
+      'Você tem certeza que deseja sair?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sim', onPress: () => {
+            router.push('/(login)');
+            Alert.alert('Logout', 'Você foi desconectado.');
+          }
+        }
+      ],
+      { cancelable: false }
     );
-}
+  };
+
+  const footerButtons = [
+    { icon: 'home', route: '/inicio' },
+    { icon: 'bar-chart', route: '/graficos' },
+    { icon: 'plus-circle', route: '', onPress: () => Alert.alert('Adicionar item', 'Função de adicionar item clicada') },
+    { icon: 'lightbulb-o', route: '/dicas' },
+    { icon: 'cog', route: '/configuracoes' },
+  ];
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Configurações</Text>
+      </View>
+
+      <View style={styles.profileSection}>
+        <Image
+          source={{ uri: 'https://via.placeholder.com/150' }} // Substitua pela URL da imagem de perfil
+          style={styles.profileImage}
+        />
+        <Text style={styles.profileName}>{userName}</Text>
+        <Text style={styles.profileEmail}>{userEmail}</Text>
+        <TouchableOpacity style={styles.editProfileButton} onPress={toggleProfileEditModal}>
+          <FontAwesome name="pencil" size={20} color="#fff" />
+          <Text style={styles.editProfileText}>Editar perfil</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.settingsSection}>
+        <Text style={styles.sectionTitle}>Configurações Gerais</Text>
+        <TouchableOpacity style={styles.settingsItem} onPress={toggleSalaryInsertModal}>
+          <View style={styles.settingsIconWrapper}>
+            <FontAwesome name="money" size={20} color="#fff" />
+          </View>
+          <Text style={styles.settingsText}>Inserir salario</Text>
+          <FontAwesome name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsItem} onPress={toggleChangePasswordModal}>
+          <View style={styles.settingsIconWrapper}>
+            <FontAwesome name="lock" size={20} color="#fff" />
+          </View>
+          <Text style={styles.settingsText}>Alterar senha</Text>
+          <FontAwesome name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsItem} onPress={handleLogout}>
+          <View style={styles.settingsIconWrapper}>
+            <FontAwesome name="sign-out" size={20} color="#fff" />
+          </View>
+          <Text style={styles.settingsText}>Sair</Text>
+          <FontAwesome name="chevron-right" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.footer}>
+        {footerButtons.map((button, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.footerButton}
+            onPress={button.onPress || (() => Alert.alert('Navegação', `Navegar para ${button.route}`))}
+          >
+            <FontAwesome name={button.icon} size={32} color="black" />
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Modal isVisible={isProfileEditModalVisible} onBackdropPress={toggleProfileEditModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Editar Perfil</Text>
+          <TextInput placeholder="Nome" style={styles.input} />
+          <TextInput placeholder="Email" style={styles.input} />
+          <Button title="Salvar" onPress={toggleProfileEditModal} />
+        </View>
+      </Modal>
+
+      <Modal isVisible={isSalaryInsertModalVisible} onBackdropPress={toggleSalaryInsertModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Inserir Salário</Text>
+          <TextInput placeholder="Salário" style={styles.input} />
+          <Button title="Salvar" onPress={toggleSalaryInsertModal} />
+        </View>
+      </Modal>
+
+      <Modal isVisible={isChangePasswordModalVisible} onBackdropPress={toggleChangePasswordModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Alterar Senha</Text>
+          <TextInput placeholder="Senha Atual" style={styles.input} secureTextEntry />
+          <TextInput placeholder="Nova Senha" style={styles.input} secureTextEntry />
+          <Button title="Salvar" onPress={toggleChangePasswordModal} />
+        </View>
+      </Modal>
+
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        padding: 45,
-        flex: 1,
-
-    },
-    header: {
-        justifyContent: 'space-between',
-        width: 320,
-        height: 100,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 40
-
-    },
-    logo: {
-        width: 70,
-        height: 70,
-
-
-    },
-    textHeader: {
-        fontFamily: 'Inter',
-        fontSize: 20,
-        fontWeight: 'bold',
-        top: 25,
-        right: 120
-
-    },
-    iconSaldo: {
-        position: 'absolute',
-        bottom: 10,
-        right: 1
-    },
-    iconPagamento: {
-        position: 'absolute',
-        bottom: 35,
-        right: 55
-    },
-
-    botaopagamento: {
-        justifyContent: 'flex-end',
-        width: 156,
-        height: 100,
-        backgroundColor: '#BDF8E2',
-        borderRadius: 15,
-
-    },
-    pagamento: {
-        width: 78,
-        height: 56,
-        left: 6
-    },
-    imgCofrinho_Emprestimo: {
-        position: 'absolute',
-        width: 45,
-        height: 45,
-        left: 55,
-        bottom: 35
-    },
-    imgRodape: {
-        width: 60,
-        height: 70
-    },
-    containersenha: {
-
-        justifyContent: 'space-around',
-        shadowOpacity: 0.2,
-        width: 325,
-        height: 360,
-        fontSize: 14,
-        marginTop: 35,
-        marginBottom: 85,
-        borderRadius: 15,
-
-
-    },
-    textMenu: {
-        position: 'absolute',
-        fontSize: 16,
-        left: 40,
-        bottom: 10
-    },
-    imgMenu: {
-        position: 'absolute',
-        bottom: 5,
-
-    },
-
-
+  container: {
+    flex: 1,
+    backgroundColor: '#101010',
+  },
+  header: {
+    backgroundColor: '#4caf50',
+    padding: 20,
+    alignItems: 'center',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    position: 'absolute',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  profileSection: {
+    alignItems: 'center',
+    marginTop: 80,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 10,
+  },
+  profileEmail: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  editProfileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    backgroundColor: '#4caf50',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  editProfileText: {
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 5,
+  },
+  settingsSection: {
+    marginTop: 30,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  settingsItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E2923',
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  settingsIconWrapper: {
+    backgroundColor: '#4caf50',
+    padding: 10,
+    borderRadius: 50,
+    marginRight: 10,
+  },
+  settingsText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 15,
+    backgroundColor: '#4caf50',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  footerButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    width: '100%',
+  },
 });
+
+export default ConfiguracoesScreen;

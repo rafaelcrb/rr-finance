@@ -1,33 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, RefreshControl, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BarChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
 import { db } from '../config/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import RNPickerSelect from 'react-native-picker-select';
+import { BarChart, PieChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
 
 const GraficoScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [despesas, setDespesas] = useState<number[]>([]);
   const [salario, setSalario] = useState<number>(0);
   const [gastos, setGastos] = useState<number>(0);
-  const [fixos, setFixos] = useState<number>(0);
   const [saldo, setSaldo] = useState<number>(0);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(2);
+  const [refreshing, setRefreshing] = useState(false);
+  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
   const router = useRouter();
 
-  const fetchData = async () => {
+  const fetchData = async (monthIndex: number | null = 2) => {
     try {
       const now = new Date();
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(now.getMonth() - 2);
+      const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
 
-      // Fetch despesas
       const despesasCollection = collection(db, 'despesas');
       const despesasQuery = query(
         despesasCollection,
@@ -38,6 +36,7 @@ const GraficoScreen: React.FC = () => {
       const despesasList = despesasSnapshot.docs.map(doc => doc.data()) as { valor: string; date: Timestamp }[];
 
       const monthlyExpenses = [0, 0, 0];
+
       despesasList.forEach(despesa => {
         const date = despesa.date.toDate();
         const monthDiff = now.getMonth() - date.getMonth();
@@ -47,7 +46,6 @@ const GraficoScreen: React.FC = () => {
       });
       setDespesas(monthlyExpenses);
 
-      // Fetch receitas (salario)
       const receitasCollection = collection(db, 'receitas');
       const receitasQuery = query(
         receitasCollection,
@@ -63,25 +61,16 @@ const GraficoScreen: React.FC = () => {
       });
       setSalario(totalSalario);
 
-      // Fetch despesas fixas
-      const despesasFixasCollection = collection(db, 'despesasfixas');
-      const despesasFixasQuery = query(despesasFixasCollection);
-      const despesasFixasSnapshot = await getDocs(despesasFixasQuery);
-      const despesasFixasList = despesasFixasSnapshot.docs.map(doc => doc.data()) as { valor: string }[];
-
-      let totalFixos = 0;
-      despesasFixasList.forEach(despesaFixa => {
-        totalFixos += parseFloat(despesaFixa.valor);
-      });
-      setFixos(totalFixos);
-
-      // Calculate total gastos
       const totalGastos = monthlyExpenses.reduce((acc, curr) => acc + curr, 0);
       setGastos(totalGastos);
 
-      // Calculate saldo
-      const calculatedSaldo = totalSalario - totalGastos - totalFixos;
+      const calculatedSaldo = totalSalario - totalGastos;
       setSaldo(calculatedSaldo);
+
+      if (monthIndex !== null && monthIndex >= 0 && monthIndex < 3) {
+        setGastos(monthlyExpenses[monthIndex]);
+        setSaldo((totalSalario / 3) - monthlyExpenses[monthIndex]);
+      }
 
     } catch (error) {
       console.error("Erro ao buscar dados: ", error);
@@ -89,7 +78,12 @@ const GraficoScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(selectedMonthIndex);
+  }, [selectedMonthIndex]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData().then(() => setRefreshing(false));
   }, []);
 
   const handleAddOption = (option: string) => {
@@ -99,6 +93,10 @@ const GraficoScreen: React.FC = () => {
     } else if (option === 'receita') {
       router.push('/receitas');
     }
+  };
+
+  const handleMonthSelect = (itemValue: number) => {
+    setSelectedMonthIndex(itemValue);
   };
 
   const footerButtons = [
@@ -130,6 +128,14 @@ const GraficoScreen: React.FC = () => {
     ]
   };
 
+  const pieData = despesas.map((value, index) => ({
+    name: getMonthLabels()[index],
+    population: value,
+    color: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+    legendFontColor: '#FFFFFF',
+    legendFontSize: 15,
+  }));
+
   const chartConfig = {
     backgroundGradientFrom: "#1E2923",
     backgroundGradientFromOpacity: 0,
@@ -145,67 +151,111 @@ const GraficoScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <View style={styles.menuIcon}>
-            <View style={styles.bar}></View>
-            <View style={styles.bar}></View>
-            <View style={styles.bar}></View>
-          </View>
-        </TouchableOpacity>
-        <Text style={styles.financeSummaryTitle}>Gráfico Financeiro</Text>
-      </View>
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Últimos 3 meses</Text>
-        <BarChart
-          data={data}
-          width={screenWidth - 40}
-          height={220}
-          chartConfig={chartConfig}
-          style={styles.chart}
-        />
-      </View>
-      <View style={styles.summaryBox}>
-        <Text style={styles.totalLabel}>Salário: R$ {salario.toFixed(2)}</Text>
-        <Text style={styles.totalLabel}>Gastos: R$ {gastos.toFixed(2)}</Text>
-        <Text style={styles.totalLabel}>Fixos: R$ {fixos.toFixed(2)}</Text>
-        <Text style={[styles.totalLabel, { color: saldoCor }]}>Saldo: R$ {saldo.toFixed(2)}</Text>
-        {saldo < 0 && (
-          <View style={styles.alertBox}>
-            <FontAwesome name="exclamation-circle" size={24} color="red" />
-            <Text style={styles.alertText}>Alerta ligado, seu estado financeiro é deplorável, reveja seus gastos e melhore suas finanças.</Text>
-          </View>
-        )}
-      </View>
-
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Adicionar</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={() => handleAddOption('despesa')}>
-              <Text style={styles.modalButtonText}>Adicionar Despesa</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={() => handleAddOption('receita')}>
-              <Text style={styles.modalButtonText}>Adicionar Receita</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={() => setModalVisible(false)}>
-              <Text style={styles.modalButtonText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
+      
+        <View style={styles.header}>
+          <TouchableOpacity>
+            <View style={styles.menuIcon}>
+              <View style={styles.bar}></View>
+              <View style={styles.bar}></View>
+              <View style={styles.bar}></View>
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.financeSummaryTitle}>Gráfico Financeiro</Text>
         </View>
-      </Modal>
+        
+        <View style={styles.chartContainer}>
+          <Text style={styles.chartTitle}>Últimos 3 meses</Text>
+          {chartType === 'bar' ? (
+            <BarChart
+              data={data}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={chartConfig}
+              style={styles.chart}
+              fromZero
+              showValuesOnTopOfBars
+              yAxisLabel="R$"
+              yAxisSuffix=""
+              yLabelsOffset={0}
+              
+            />
+          ) : (
+            <PieChart
+              data={pieData}
+              width={screenWidth - 40}
+              height={220}
+              chartConfig={chartConfig}
+              accessor="population"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              center={[10, 0]}
+              absolute
+            />
+          )}
+          <TouchableOpacity
+            style={styles.switchButton}
+            onPress={() => setChartType(chartType === 'bar' ? 'pie' : 'bar')}
+          >
+            <Text style={styles.switchButtonText}>
+              {chartType === 'bar' ? 'Ver Gráfico de Pizza' : 'Ver Gráfico de Barras'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>Selecionar Mês:</Text>
+          <RNPickerSelect
+            onValueChange={(value) => handleMonthSelect(value)}
+            items={getMonthLabels().map((label, index) => ({ label, value: index }))}
+            style={{
+              inputIOS: { color: '#FFFFFF' },
+              inputAndroid: { color: '#FFFFFF' },
+            }}
+          />
+
+        </View>
+        <View style={styles.summaryBox}>
+          <Text style={styles.totalLabel}>Salário: R$ {salario.toFixed(2)}</Text>
+          <Text style={styles.totalLabel}>Gastos: R$ {gastos.toFixed(2)}</Text>
+          <Text style={[styles.totalLabel, { color: saldoCor }]}>Saldo: R$ {saldo.toFixed(2)}</Text>
+          {saldo < 0 && (
+            <View style={styles.alertBox}>
+              <FontAwesome name="exclamation-circle" size={24} color="red" />
+              <Text style={styles.alertText}>Seu saldo está negativo!</Text>
+            </View>
+          )}
+        </View>
+    
       <View style={styles.footer}>
         {footerButtons.map((button, index) => (
           <TouchableOpacity
             key={index}
+            onPress={() => button.route ? router.push(button.route) : button.onPress?.()}
             style={styles.footerButton}
-            onPress={button.onPress || (() => router.push(button.route))}
           >
-            <FontAwesome name={button.icon} size={32} color="black" />
+            <FontAwesome name={button.icon} size={30} color="black" />
           </TouchableOpacity>
         ))}
       </View>
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity style={styles.modalOption} onPress={() => handleAddOption('despesa')}>
+            <Text style={styles.modalOptionText}>Adicionar Despesa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalOption} onPress={() => handleAddOption('receita')}>
+            <Text style={styles.modalOptionText}>Adicionar Receita</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalOption} onPress={() => setModalVisible(false)}>
+            <Text style={styles.modalOptionText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -213,8 +263,11 @@ const GraficoScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1d1d1d',
+    backgroundColor: '#101010',
     paddingHorizontal: 20,
+  },
+  scrollContainer: {
+    padding: 10,
   },
   header: {
     backgroundColor: '#4caf50',
@@ -226,10 +279,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    borderBottomRightRadius: 20
+    
   },
   menuIcon: {
-    flexDirection: 'column',
+    padding: 10,
   },
   bar: {
     width: 25,
@@ -246,44 +300,59 @@ const styles = StyleSheet.create({
     left: 65
   },
   chartContainer: {
-    marginTop: 70,
-    marginBottom: 20,
     alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 40,
+   
+    
   },
   chartTitle: {
-    fontSize: 20,
-    color: '#FFFFFF',
-    marginBottom: 10,
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 25,
   },
   chart: {
     borderRadius: 16,
+    
   },
-  summaryBox: {
-    backgroundColor: '#FFFFFF',
+  switchButton: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#1E2923',
     borderRadius: 10,
-    padding: 20,
+  },
+  switchButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  pickerContainer: {
     marginBottom: 20,
   },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  pickerLabel: {
+    color: '#fff',
+    fontSize: 16,
     marginBottom: 5,
   },
-  saldoPositivo: {
-    color: 'green',
+  summaryBox: {
+    backgroundColor: '#1E2923',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
   },
-  saldoNegativo: {
-    color: 'red',
+  totalLabel: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 5,
   },
   alertBox: {
-    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 10,
   },
   alertText: {
     color: 'red',
     marginLeft: 10,
-    fontSize: 16,
   },
   footer: {
     flexDirection: 'row',
@@ -299,36 +368,22 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     alignItems: 'center',
-    justifyContent: 'center',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    marginHorizontal: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  modalButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
-  modalButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  modalOption: {
+    backgroundColor: '#1E2923',
+    padding: 20,
+    borderRadius: 10,
+    marginVertical: 10,
+  },
+  modalOptionText: {
+    color: '#fff',
+    fontSize: 18,
   },
 });
 

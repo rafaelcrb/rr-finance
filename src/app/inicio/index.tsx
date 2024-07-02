@@ -386,7 +386,7 @@ const InicioScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1d1d1d',
+    backgroundColor: '#101010',
     paddingHorizontal: 20,
   },
   header: {
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
     left: 65
   },
   summaryBox: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2923',
     borderRadius: 10,
     padding: 20,
     marginTop: 70,
@@ -430,10 +430,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#fff'
   },
   totalValue: {
     fontSize: 18,
     marginBottom: 5,
+    color: '#fff'
   },
   saldoPositivo: {
     color: 'green',
@@ -442,7 +444,7 @@ const styles = StyleSheet.create({
     color: 'red',
   },
   sectionHeader: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#A9A9A9',
     borderRadius: 10,
     padding: 10,
     marginTop: 20,
@@ -458,7 +460,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   item: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2923',
     borderRadius: 10,
     padding: 10,
     marginVertical: 5,
@@ -469,6 +471,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 16,
+    color: '#fff'
   },
   footerButton: {
     alignItems: 'center',
@@ -485,7 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
     marginHorizontal: 20,
