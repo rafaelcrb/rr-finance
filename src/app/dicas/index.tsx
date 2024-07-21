@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -10,6 +10,21 @@ interface Dica {
   description: string;
 }
 
+const fetchedDicas: Dica[] = [
+  { id: '1', title: 'Economize em energia elétrica', description: 'Desligue os aparelhos da tomada quando não estiverem em uso.' },
+  { id: '2', title: 'Planejamento financeiro', description: 'Crie um orçamento mensal e siga-o rigorosamente.' },
+  { id: '3', title: 'Registre suas despesas', description: 'Mantenha um registro detalhado de todas as suas despesas diárias, mensais e anuais.' },
+  { id: '4', title: 'Pague suas dívidas', description: 'Priorize o pagamento de suas dívidas para evitar juros altos.' },
+  { id: '5', title: 'Evite compras por impulso', description: 'Planeje suas compras e evite gastar em coisas desnecessárias.' },
+  { id: '6', title: 'Faça um fundo de emergência', description: 'Reserve uma quantia para imprevistos, como consertos de carro ou emergências médicas.' },
+  { id: '7', title: 'Invista em educação financeira', description: 'Leia livros e participe de cursos sobre finanças pessoais.' },
+  { id: '8', title: 'Compare preços', description: 'Antes de fazer uma compra, compare preços em diferentes lojas para garantir que você está obtendo o melhor valor.' },
+  { id: '9', title: 'Use aplicativos de finanças', description: 'Utilize aplicativos para monitorar suas finanças e manter o controle de suas despesas.' },
+  { id: '10', title: 'Defina metas financeiras', description: 'Estabeleça metas claras, como comprar uma casa, viajar ou se aposentar mais cedo.' },
+  { id: '11', title: 'Reveja assinaturas e serviços', description: 'Verifique suas assinaturas mensais e cancele aquelas que você não utiliza.' },
+  { id: '12', title: 'Faça um orçamento familiar', description: 'Inclua todos os membros da família no planejamento financeiro para garantir que todos estão comprometidos com as metas financeiras.' },
+];
+
 const DicasScreen: React.FC = () => {
   const [dicas, setDicas] = useState<Dica[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -17,12 +32,10 @@ const DicasScreen: React.FC = () => {
 
   const fetchDicas = async () => {
     try {
-      const fetchedDicas: Dica[] = [
-        { id: '1', title: 'Economize em energia elétrica', description: 'Desligue os aparelhos da tomada quando não estiverem em uso.' },
-        { id: '2', title: 'Planejamento financeiro', description: 'Crie um orçamento mensal e siga-o rigorosamente.' },
-        // Adicione mais dicas conforme necessário
-      ];
-      setDicas(fetchedDicas);
+      // Seleciona uma dica diferente a cada dia
+      const today = new Date().getDate();
+      const dicaDoDia = fetchedDicas[today % fetchedDicas.length];
+      setDicas([dicaDoDia]);
     } catch (error) {
       console.error("Erro ao buscar dicas: ", error);
     }

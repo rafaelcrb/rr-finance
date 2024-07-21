@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SectionList, RefreshControl, 
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, getDocs, doc, deleteDoc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import moment from 'moment';
@@ -44,16 +44,29 @@ const InicioScreen: React.FC = () => {
   const [datePickerVisible, setDatePickerVisible] = useState<{ tipo: string; isStart: boolean }>({ tipo: '', isStart: false });
   const router = useRouter();
 
+
+
+
   const fetchData = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      console.error('Usuário não está logado!');
+      return;
+    }
+
+    const uid = user.uid;
+
+
     try {
       console.log('Atualizando...');
-      const despesasCollection = collection(db, 'despesas');
+      const despesasCollection = collection(db, `usuarios/${uid}/despesas`);
       const despesasQuery = query(despesasCollection, where('date', '>=', despesaStartPeriodo!.toDate()), where('date', '<=', despesaEndPeriodo!.toDate()));
       const despesasSnapshot = await getDocs(despesasQuery);
       const despesasList = despesasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
       setDespesas(despesasList);
 
-      const receitasCollection = collection(db, 'receitas');
+      const receitasCollection = collection(db, `usuarios/${uid}/receitas`);
       const receitasQuery = query(receitasCollection, where('date', '>=', receitaStartPeriodo!.toDate()), where('date', '<=', receitaEndPeriodo!.toDate()));
       const receitasSnapshot = await getDocs(receitasQuery);
       const receitasList = receitasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Item[];
@@ -108,21 +121,30 @@ const InicioScreen: React.FC = () => {
     }
   };
 
+  const user = auth.currentUser;
+
+    if (!user) {
+      console.error('Usuário não está logado!');
+      return;
+    }
+
+    const uid = user.uid;
+
   const handleDeleteDespesa = async (id: string, tipo: string) => {
-    const collectionName = tipo === 'despesa' ? 'receitas' : 'despesas';
+    const collectionName = tipo === 'despesa' ? 'receitas' : `usuarios/${uid}/despesas`;
     await deleteDoc(doc(db, collectionName, id));
     await fetchData();
   };
 
   const handleDeleteReceita = async (id: string, tipo: string) => {
-    const collectionName = tipo === 'despesa' ? 'despesas' : 'receitas';
+    const collectionName = tipo === 'despesa' ? 'despesas' :`usuarios/${uid}/receitas`;
     await deleteDoc(doc(db, collectionName, id));
     await fetchData();
   };
 
   const handleEditDespesa = async () => {
     if (selectedItem) {
-      const collectionName = selectedItem.dateType === 'despesa' ? 'receitas' : 'despesas';
+      const collectionName = selectedItem.dateType === 'despesa' ? 'receitas' : `usuarios/${uid}/despesas`;
       const itemDoc = doc(db, collectionName, selectedItem.id);
       await updateDoc(itemDoc, {
         description: selectedItem.description,
@@ -135,7 +157,7 @@ const InicioScreen: React.FC = () => {
 
   const handleEditReceita = async () => {
     if (selectedItem) {
-      const collectionName = selectedItem.dateType === 'despesa' ? 'despesas' : 'receitas';
+      const collectionName = selectedItem.dateType === 'despesa' ? 'despesas' : `usuarios/${uid}/receitas`;
       const itemDoc = doc(db, collectionName, selectedItem.id);
       await updateDoc(itemDoc, {
         description: selectedItem.description,

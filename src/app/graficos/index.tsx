@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, RefreshControl, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { db } from '../config/firebase';
+import { auth, db } from '../config/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import RNPickerSelect from 'react-native-picker-select';
@@ -22,11 +22,20 @@ const GraficoScreen: React.FC = () => {
   const router = useRouter();
 
   const fetchData = async (monthIndex: number | null = 2) => {
+    const user = auth.currentUser;
+  
+    if (!user) {
+      console.error('Usuário não está logado!');
+      return;
+    }
+  
+    const uid = user.uid;
+   
     try {
       const now = new Date();
       const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-
-      const despesasCollection = collection(db, 'despesas');
+  
+      const despesasCollection = collection(db, `usuarios/${uid}/despesas`);
       const despesasQuery = query(
         despesasCollection,
         where('date', '>=', Timestamp.fromDate(threeMonthsAgo)),
@@ -34,9 +43,9 @@ const GraficoScreen: React.FC = () => {
       );
       const despesasSnapshot = await getDocs(despesasQuery);
       const despesasList = despesasSnapshot.docs.map(doc => doc.data()) as { valor: string; date: Timestamp }[];
-
+  
       const monthlyExpenses = [0, 0, 0];
-
+  
       despesasList.forEach(despesa => {
         const date = despesa.date.toDate();
         const monthDiff = now.getMonth() - date.getMonth();
@@ -45,38 +54,46 @@ const GraficoScreen: React.FC = () => {
         }
       });
       setDespesas(monthlyExpenses);
-
-      const receitasCollection = collection(db, 'receitas');
+  
+      const receitasCollection = collection(db, `usuarios/${uid}/receitas`);
       const receitasQuery = query(
         receitasCollection,
         where('date', '>=', Timestamp.fromDate(threeMonthsAgo)),
         where('date', '<=', Timestamp.fromDate(now))
       );
       const receitasSnapshot = await getDocs(receitasQuery);
-      const receitasList = receitasSnapshot.docs.map(doc => doc.data()) as { valor: string }[];
-
-      let totalSalario = 0;
+      const receitasList = receitasSnapshot.docs.map(doc => doc.data()) as { valor: string; date: Timestamp }[];
+  
+      const monthlySalaries = [0, 0, 0];
+  
       receitasList.forEach(receita => {
-        totalSalario += parseFloat(receita.valor);
+        const date = receita.date.toDate();
+        const monthDiff = now.getMonth() - date.getMonth();
+        if (monthDiff >= 0 && monthDiff < 3) {
+          monthlySalaries[2 - monthDiff] += parseFloat(receita.valor);
+        }
       });
-      setSalario(totalSalario);
-
-      const totalGastos = monthlyExpenses.reduce((acc, curr) => acc + curr, 0);
-      setGastos(totalGastos);
-
-      const calculatedSaldo = totalSalario - totalGastos;
-      setSaldo(calculatedSaldo);
-
+  
       if (monthIndex !== null && monthIndex >= 0 && monthIndex < 3) {
+        setSalario(monthlySalaries[monthIndex]);
         setGastos(monthlyExpenses[monthIndex]);
-        setSaldo((totalSalario / 3) - monthlyExpenses[monthIndex]);
+        setSaldo(monthlySalaries[monthIndex] - monthlyExpenses[monthIndex]);
+      } else {
+        const totalSalario = monthlySalaries.reduce((acc, curr) => acc + curr, 0);
+        setSalario(totalSalario);
+  
+        const totalGastos = monthlyExpenses.reduce((acc, curr) => acc + curr, 0);
+        setGastos(totalGastos);
+  
+        const calculatedSaldo = totalSalario - totalGastos;
+        setSaldo(calculatedSaldo);
       }
-
+  
     } catch (error) {
       console.error("Erro ao buscar dados: ", error);
     }
   };
-
+  
   useEffect(() => {
     fetchData(selectedMonthIndex);
   }, [selectedMonthIndex]);

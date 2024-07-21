@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "rr-finance",
-    "slug": "projeto",
+    "slug": "rr-finance",
     "version": "1.0.0",
     "scheme": "rrbank",
     "orientation": "portrait",
@@ -34,14 +34,14 @@
         "origin": false
       },
       "eas": {
-        "projectId": "d51124dd-c85b-4555-b90b-c37e6e701695"
+        "projectId": "622fc944-50a8-494f-be81-5138b2b10839"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/d51124dd-c85b-4555-b90b-c37e6e701695"
+      "url": "https://u.expo.dev/622fc944-50a8-494f-be81-5138b2b10839"
     },
     "owner": "rafaelcrb"
   }

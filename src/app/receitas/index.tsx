@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../config/firebase'
+import { auth, db } from '../config/firebase';
 
 const RevenueScreen: React.FC = () => {
   const [valor, setValor] = useState<string>('');
@@ -11,15 +11,30 @@ const RevenueScreen: React.FC = () => {
   const router = useRouter();
 
   const handleAddRevenue = async () => {
-    const receita = { valor, description, date: new Date() };
-    try {
-      const docRef = await addDoc(collection(db, 'receitas'), receita);
-      console.log('Documento escrito com ID: ', docRef.id);
-    } catch (e) {
-      console.error('Erro ao adicionar documento: ', e);
+    if (!valor.trim()) {
+      Alert.alert('Erro', 'O campo de valor não pode estar vazio!');
+      return;
     }
-    console.log('Receita adicionada:', { valor, description });
-    router.back();
+
+    const user = auth.currentUser;
+    if (user) {
+      const uid = user.uid;
+      const receita = { valor, description, date: new Date() };
+
+      try {
+        const docRef = await addDoc(collection(db, `usuarios/${uid}/receitas`), receita);
+        console.log('Documento escrito com ID: ', docRef.id);
+      } catch (e) {
+        console.error('Erro ao adicionar documento: ', e);
+        Alert.alert('Erro', 'Não foi possível adicionar a receita!');
+        return;
+      }
+
+      console.log('Receita adicionada:', { valor, description });
+      router.back();
+    } else {
+      Alert.alert('Erro', 'Usuário não está logado!');
+    }
   };
 
   return (
@@ -42,6 +57,9 @@ const RevenueScreen: React.FC = () => {
       />
       <TouchableOpacity style={styles.button} onPress={handleAddRevenue}>
         <Text style={styles.buttonText}>Adicionar</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={router.back}>
+        <Text style={styles.buttonText}>Voltar</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -70,8 +88,9 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: '#4caf50',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 30,
     alignItems: 'center',
+    margin: 10
   },
   buttonText: {
     color: '#fff',

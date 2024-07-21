@@ -13,6 +13,7 @@ const ConfiguracoesScreen: React.FC = () => {
   const [isChangePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -61,10 +62,20 @@ const ConfiguracoesScreen: React.FC = () => {
   const footerButtons = [
     { icon: 'home', route: '/inicio' },
     { icon: 'bar-chart', route: '/graficos' },
-    { icon: 'plus-circle', route: '', onPress: () => Alert.alert('Adicionar item', 'Função de adicionar item clicada') },
+    { icon: 'plus-circle', route: '', onPress: () => setModalVisible(true) },
     { icon: 'lightbulb-o', route: '/dicas' },
-    { icon: 'cog', route: '/configuracoes' },
+    { icon: 'cog', route: '/menu' },
   ];
+
+  const handleAddOption = (option: string) => {
+    setModalVisible(false);
+    if (option === 'despesa') {
+      router.push('/despesas');
+    } else if (option === 'receita') {
+      router.push('/receitas');
+    }
+  };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -115,12 +126,30 @@ const ConfiguracoesScreen: React.FC = () => {
           <TouchableOpacity
             key={index}
             style={styles.footerButton}
-            onPress={button.onPress || (() => Alert.alert('Navegação', `Navegar para ${button.route}`))}
+            onPress={button.onPress || (() => router.push(button.route))}
           >
             <FontAwesome name={button.icon} size={32} color="black" />
           </TouchableOpacity>
         ))}
       </View>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity style={styles.modalOption} onPress={() => handleAddOption('despesa')}>
+            <Text style={styles.modalOptionText}>Adicionar Despesa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalOption} onPress={() => handleAddOption('receita')}>
+            <Text style={styles.modalOptionText}>Adicionar Receita</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalOption} onPress={() => setModalVisible(false)}>
+            <Text style={styles.modalOptionText}>Cancelar</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       <Modal isVisible={isProfileEditModalVisible} onBackdropPress={toggleProfileEditModal}>
         <View style={styles.modalContent}>
@@ -272,6 +301,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 10,
     width: '100%',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+  modalOption: {
+    backgroundColor: '#1E2923',
+    padding: 20,
+    borderRadius: 10,
+    marginVertical: 10,
+  },
+  modalOptionText: {
+    color: '#fff',
+    fontSize: 18,
   },
 });
 
